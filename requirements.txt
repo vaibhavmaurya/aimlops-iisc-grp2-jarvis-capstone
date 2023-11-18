@@ -1,0 +1,7 @@
+jupyterlab
+pandas
+yfinance
+beautifulsoup4
+requests
+aiohttp
+nest-asyncio
