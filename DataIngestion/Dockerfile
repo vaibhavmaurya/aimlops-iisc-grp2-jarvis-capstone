@@ -23,4 +23,7 @@ CMD ["app.lambda_handler"]
 
 # docker run -e AWS_ACCESS_KEY_ID=your_access_key -e AWS_SECRET_ACCESS_KEY=your_secret_key -e AWS_DEFAULT_REGION=your_region your_docker_image
 
-# docker run -d -p 9000:8080 --rm --name stocks_ingest -v ./src:/var/task stocks
+# docker run -d -p 9000:8080 --rm --name stocks_ingest -v ./src:/var/task -e AWS_ACCESS_KEY_ID=AKIAR7FVKROUY4WOVAOZ -e AWS_SECRET_ACCESS_KEY=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 -e AWS_DEFAULT_REGION=ap-south-1 stocks_ingest
+
+# Reference: https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html
+# aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 135671745449.dkr.ecr.ap-south-1.amazonaws.com

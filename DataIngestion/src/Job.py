@@ -6,6 +6,23 @@ import pandas as pd
 import io
 from typing import List, Dict, Any
 
+
+def get_timestamp_today():
+
+    # Get today's date
+    today = pd.Timestamp.today()
+
+    # Get the timestamp of today's beginning
+    start_ts = int(today.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+
+    # Get the timestamp of today's end
+    end_ts = int(today.replace(hour=23, minute=59, second=59, microsecond=999).timestamp())
+
+    print("Start timestamp:", start_ts)
+    print("End timestamp:", end_ts)
+    return start_ts, end_ts
+
+
 # Define URL template
 URL = "https://query1.finance.yahoo.com/v7/finance/download/{0}?period1={1}&period2={2}&interval=1d&events=history"
 
@@ -26,7 +43,7 @@ async def download_stock_data(session: aiohttp.ClientSession, company_code: str,
                 data = await response.text()
                 df = pd.read_csv(io.StringIO(data))
                 df['company_name'] = company_name
-                df['company_code'] = company_code
+                df['company_code'] = company_code.split('.NS')[0]
                 return df
             else:
                 print(f"Failed to download data for {company_code}. HTTP status: {response.status}")
@@ -46,6 +63,8 @@ async def download_job(stocks_list: pd.DataFrame, start_date: str, end_date: str
     """
     start_ts = int(pd.to_datetime(start_date).timestamp())
     end_ts = int(pd.to_datetime(end_date).timestamp())
+
+    start_ts, end_ts = get_timestamp_today()
 
     async with aiohttp.ClientSession() as session:
         tasks = [asyncio.create_task(download_stock_data(session, row['company_code'], row['company_name'], start_ts, end_ts)) for _, row in stocks_list.iterrows()]

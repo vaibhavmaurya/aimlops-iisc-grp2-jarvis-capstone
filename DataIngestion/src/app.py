@@ -4,6 +4,7 @@ import pandas as pd
 import logging
 import traceback
 import datetime
+import boto3
 
 from ReadStocks import stocks_list
 from Job import download_job
@@ -13,6 +14,7 @@ from Constants import STOCKS_DATA_S3_BUCKET, STOCKS_DATA_S3_BUCKET_PREFIX
 # Set up logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+s3_client = boto3.client('s3')
 
 def lambda_handler(event, context):
     try:
@@ -31,10 +33,12 @@ def lambda_handler(event, context):
         # Write DataFrame to S3 in parquet format
 
         today = datetime.date.today()
-        output_file = f"s3://{bucket_name}/{file_path}/{today.year}_{today.month}_{today.day}.csv"
+        output_file = f"{file_path}/{today.year}_{today.month}_{today.day}.csv"
 
         # output_file = f"data/{today.year}_{today.month}_{today.day}.csv"
-        final_nifty_data_df.to_csv(output_file, index=False)
+        final_nifty_data_df.to_csv(index=False)
+
+        s3_client.put_object(Body=final_nifty_data_df.to_csv(index=False), Bucket=bucket_name, Key=output_file)
 
         # final_nifty_data_df.to_csv('data/2023_stocks.csv', index=False)
 
