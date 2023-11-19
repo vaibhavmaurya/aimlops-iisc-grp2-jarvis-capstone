@@ -47,12 +47,12 @@ async def download_stock_data(session: aiohttp.ClientSession, company_code: str,
                 return df
             else:
                 print(f"Failed to download data for {company_code}. HTTP status: {response.status}")
-                return pd.DataFrame()
+                return None
     except Exception as e:
-        print(f"An error occurred while downloading data for {company_code}: {e}")
-        return pd.DataFrame()
+        raise Exception(f"An error occurred while downloading data for {company_code}: {e}")
 
-async def download_job(stocks_list: pd.DataFrame, start_date: str, end_date: str) -> pd.DataFrame:
+
+async def download_job(stocks_list: pd.DataFrame) -> pd.DataFrame:
     """
     Main function to download stock data for multiple company_codes.
 
@@ -61,16 +61,20 @@ async def download_job(stocks_list: pd.DataFrame, start_date: str, end_date: str
     :param end_date: End date in 'YYYY-MM-DD' format.
     :return: DataFrame with combined stock data.
     """
-    start_ts = int(pd.to_datetime(start_date).timestamp())
-    end_ts = int(pd.to_datetime(end_date).timestamp())
+    # start_ts = int(pd.to_datetime(start_date).timestamp())
+    # end_ts = int(pd.to_datetime(end_date).timestamp())
 
     start_ts, end_ts = get_timestamp_today()
 
     async with aiohttp.ClientSession() as session:
         tasks = [asyncio.create_task(download_stock_data(session, row['company_code'], row['company_name'], start_ts, end_ts)) for _, row in stocks_list.iterrows()]
         nifty_data_list = await asyncio.gather(*tasks)
+        nifty_data_list = [item for item in nifty_data_list if item is not None]
 
-        nifty_data_df = pd.concat(nifty_data_list, ignore_index=True)
+        if len(nifty_data_list) == 0:
+            raise Exception("There is no data")
+        
+        nifty_data_df = pd.concat([item for item in nifty_data_list if item is not None], ignore_index=True, axis=0)
         nifty_data_df['Date'] = pd.to_datetime(nifty_data_df['Date'])
         nifty_data_df['year'] = nifty_data_df['Date'].dt.year
         nifty_data_df['month'] = nifty_data_df['Date'].dt.month

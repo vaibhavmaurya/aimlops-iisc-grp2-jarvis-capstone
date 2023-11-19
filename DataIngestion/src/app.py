@@ -24,7 +24,7 @@ def lambda_handler(event, context):
 
         # Run the download job
         loop = asyncio.get_event_loop()
-        final_nifty_data_df = loop.run_until_complete(download_job(stocks_list, start_date, end_date))
+        final_nifty_data_df = loop.run_until_complete(download_job(stocks_list))
 
         # Define S3 path
         bucket_name = STOCKS_DATA_S3_BUCKET
