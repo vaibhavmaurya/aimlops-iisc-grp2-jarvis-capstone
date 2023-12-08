@@ -10,6 +10,9 @@ stock_data
 
 stock_data/
 
+*/**/*.ipynb
+*.ipynb
+
 # Distribution / packaging
 .Python
 build/

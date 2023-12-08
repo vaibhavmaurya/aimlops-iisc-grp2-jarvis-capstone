@@ -1,0 +1,3 @@
+pandas
+aiohttp
+boto3

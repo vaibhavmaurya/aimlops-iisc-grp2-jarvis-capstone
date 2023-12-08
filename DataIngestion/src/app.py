@@ -15,12 +15,26 @@ from Constants import STOCKS_DATA_S3_BUCKET, STOCKS_DATA_S3_BUCKET_PREFIX
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 s3_client = boto3.client('s3')
+sqs = boto3.client('sqs')
+
+YOUR_SQS_QUEUE_URL = 'https://sqs.ap-south-1.amazonaws.com/135671745449/aimlops-grp2-jarvis-casptone-stockingestion-schedule'
+
+
+def delete_queue_message(reciept_handle):
+    # Delete the message from the queue
+    response = sqs.delete_message(
+        QueueUrl=YOUR_SQS_QUEUE_URL,
+        ReceiptHandle=reciept_handle
+    )
+
+    print("QUEUE Deleted Successfully")
+
+    return response
+
 
 def lambda_handler(event, context):
     try:
         # Parse input data from event
-        start_date = event.get('start_date', '2023-01-01')
-        end_date = event.get('end_date', '2023-11-30')
 
         # Run the download job
         loop = asyncio.get_event_loop()
@@ -32,8 +46,8 @@ def lambda_handler(event, context):
 
         # Write DataFrame to S3 in parquet format
 
-        today = datetime.date.today()
-        output_file = f"{file_path}/{today.year}_{today.month}_{today.day}.csv"
+        todays_date = datetime.datetime.now().strftime('%d-%m-%Y')
+        output_file = f"{file_path}/stock-prices-{todays_date}.csv"
 
         # output_file = f"data/{today.year}_{today.month}_{today.day}.csv"
         final_nifty_data_df.to_csv(index=False)
@@ -41,12 +55,18 @@ def lambda_handler(event, context):
         s3_client.put_object(Body=final_nifty_data_df.to_csv(index=False), Bucket=bucket_name, Key=output_file)
 
         # final_nifty_data_df.to_csv('data/2023_stocks.csv', index=False)
+        if (event.get('Records', '@') != '@') and (event['Records'][0].get('receiptHandle', '@') != '@'):
+            delete_queue_message(event['Records'][0]['receiptHandle'])
+
+        print("DOWNLOAD Job is completed")
 
         return {
             'statusCode': 200,
-            'body': json.dumps({
-                'status':'success'
-            })
+            'body': {
+                'stock_data_load_status':'SUCCESS',
+                'stock_data_load_location':f's3://{bucket_name}/{output_file}',
+                'stock_data_load_failed_reason':""
+            }
         }
     except Exception as e:
         # Log the exception
@@ -59,17 +79,12 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 500,
-            'body': json.dumps({
-                'status':'failed',
-                'error':f"Error in lambda_handler: {e}",
-                'traceback_details': {
-                    'filename': exc_traceback.tb_frame.f_code.co_filename,
-                    'lineno': exc_traceback.tb_lineno,
-                    'name': exc_traceback.tb_frame.f_code.co_name,
-                    'type': exc_type.__name__,
-                    'message': str(exc_value),  # or simply use 'str(e)'
+            'body': {
+                'stock_data_load_status':'FAILED',
+                'stock_data_load_location':f'',
+                'stock_data_load_failed_reason':f"Error: {e}"
                 }
-            })
+            
         }
 
 # Uncomment for local testing

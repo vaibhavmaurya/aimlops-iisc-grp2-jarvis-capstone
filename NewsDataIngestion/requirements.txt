@@ -1,0 +1,5 @@
+pandas
+requests
+aiohttp
+beautifulsoup4
+boto3
