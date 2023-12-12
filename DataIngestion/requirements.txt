@@ -1,5 +1,3 @@
 pandas
 requests
 aiohttp
-pyarrow
-s3fs
