@@ -46,10 +46,11 @@ def save_to_s3(df):
 
 
 
-def build_prompt(text):
-    return f'''Financial New:
+def build_prompt(text, company_code, company_name):
+    return f'''Following is the financial news about the company {company_name}, which is in short called as {company_code}.:
                {text}                  
-            Provide the summary of the above financial news in {RES_WORD_SIZE} words with maximum {RES_BULLT_POINTS} bullet points
+            Provide the summary of the above financial news in {RES_WORD_SIZE} words with maximum {RES_BULLT_POINTS} bullet points. Exclude any which is not related to the
+            company {company_name} and the company name in short form {company_code}
             '''
 
 
@@ -96,7 +97,7 @@ def build_summary(df):
             if row['token_by_space'] <= TEXT_TOKEN_SIZE:
                 summary = row['complete_text']
             else:
-                prompt = build_prompt(row['complete_text'][:MAX_TOKEN_SIZE])
+                prompt = build_prompt(row['complete_text'][:MAX_TOKEN_SIZE], row['company_code'], row['company_name'])
                 summary = call_bedrock(prompt)
                 summary = summary if summary is not None else summary
                 summary = clean_summary(summary)
