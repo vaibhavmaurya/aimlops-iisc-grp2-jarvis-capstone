@@ -49,7 +49,7 @@ def save_to_s3(df):
 def build_prompt(text, company_code, company_name):
     return f'''Following is the financial news about the company {company_name}, which is in short called as {company_code}.:
                {text}                  
-            Provide the summary of the above financial news in {RES_WORD_SIZE} words with maximum {RES_BULLT_POINTS} bullet points. Exclude any which is not related to the
+            Provide the summary of the above financial news in {RES_WORD_SIZE} words with maximum {RES_BULLT_POINTS} bullet points. Exclude any text which is not related to the
             company {company_name} and the company name in short form {company_code}
             '''
 
