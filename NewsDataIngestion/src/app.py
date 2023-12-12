@@ -123,16 +123,18 @@ async def get_all_news_for_company():
 
         all_companies = [row['company_code'].split('.NS')[0] for _, row in df_all_companies.iterrows()]
         all_search    = [row['search_term'] for _, row in df_all_companies.iterrows()]
+        all_companies_names    = [row['company_name'] for _, row in df_all_companies.iterrows()]
         
         tasks = [asyncio.create_task(fetch_financial_news_by_url(session, news_url.format(x))) for x in all_companies]
         company_news_soup_list = await asyncio.gather(*tasks)
 
         
-        for company, soup, search_term in zip(all_companies, company_news_soup_list, all_search):
+        for company, soup, search_term, company_name in zip(all_companies, company_news_soup_list, all_search, all_companies_names):
             if soup is None:
                 all_texts.append({
                     'date':today_date,
                     'company_code': company,
+                    'company_name': company_name,
                     'url': '',
                     'complete_text': '',
                     'char_length': 0,
@@ -143,6 +145,7 @@ async def get_all_news_for_company():
                 all_companies_urls.append({
                     'company':company,
                     'urls':list(set([div.find('a').get('href') for div in soup.find_all('div', class_='z4rs2b')])),
+                    'company_name': company_name,
                     'search_term':search_term
                 })
 
@@ -156,6 +159,7 @@ async def get_all_news_for_company():
             all_urls = company_url['urls']
             company_code = company_url['company']
             search_term = company_url['search_term']
+            company_name = company_url['company_name']
             # tasks = [fetch_financial_news_by_url(session, url) for url in all_urls]
             tasks = [asyncio.create_task(fetch_financial_news_by_url(session, url)) for url in all_urls]
             url_soups = await asyncio.gather(*tasks)
@@ -171,6 +175,7 @@ async def get_all_news_for_company():
                     all_texts.append({
                         'date':today_date,
                         'company_code': company_code,
+                        'company_name': company_name,
                         'url': url,
                         'complete_text': complete_text,
                         'char_length': len(complete_text),
@@ -181,6 +186,7 @@ async def get_all_news_for_company():
                     all_texts.append({
                         'date':today_date,
                         'company_code': company_code,
+                        'company_name': company_name,
                         'url': url,
                         'complete_text': "",
                         'char_length': 0,
